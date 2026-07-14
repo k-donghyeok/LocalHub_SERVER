@@ -3,6 +3,7 @@ from io import BytesIO
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from typing import List
 
 from app.db.database import get_db
 from app.schemas.post import PostCreateResponse, PostDeleteRequest, PostDetailResponse, PostImageItem, PostListItem, PostListResponse
@@ -17,9 +18,28 @@ def _detail(post) -> PostDetailResponse:
 
 
 @router.post("", response_model=PostCreateResponse, status_code=201)
-async def create(place_id: int = Form(...), nickname: str = Form(...), password: str = Form(...), title: str = Form(...), content: str = Form(...), images: list[UploadFile] | None = File(default=None), db: Session = Depends(get_db)):
-    post = await create_post(db, place_id, nickname, password, title, content, images)
-    return PostCreateResponse(id=post.id, message="게시글이 등록되었습니다.")
+async def create(
+    place_id: int = Form(...),
+    nickname: str = Form(...),
+    password: str = Form(...),
+    title: str = Form(...),
+    content: str = Form(...),
+    images: List[UploadFile] = File(default=[]),
+    db: Session = Depends(get_db)
+):
+    post = await create_post(
+        db,
+        place_id,
+        nickname,
+        password,
+        title,
+        content,
+        images
+    )
+    return PostCreateResponse(
+        id=post.id,
+        message="게시글이 등록되었습니다."
+    )
 
 
 @router.get("", response_model=PostListResponse)
@@ -40,7 +60,7 @@ def read(post_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{post_id}", response_model=PostDetailResponse)
-async def update(post_id: int, password: str = Form(...), title: str = Form(...), content: str = Form(...), images: list[UploadFile] | None = File(default=None), db: Session = Depends(get_db)):
+async def update(post_id: int, password: str = Form(...), title: str = Form(...), content: str = Form(...), images: List[UploadFile] = File(default=[]), db: Session = Depends(get_db)):
     return _detail(await update_post(db, post_id, password, title, content, images))
 
 
