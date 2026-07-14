@@ -13,6 +13,7 @@ class PostListItem(BaseModel):
     title: str
     nickname: str
     place_id: int
+    rating: int
     image_count: int
     created_at: datetime
 
@@ -32,6 +33,7 @@ class PostDetailResponse(BaseModel):
     content: str
     nickname: str
     place_id: int
+    rating: int = Field(ge=1, le=5)
     images: list[PostImageItem]
 
 

@@ -33,6 +33,10 @@ def _migrate_empty_legacy_post_tables() -> None:
         return
 
     post_columns = {column["name"] for column in inspector.get_columns("posts")}
+    if "rating" not in post_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE posts ADD COLUMN rating INTEGER NOT NULL DEFAULT 5"))
+
     image_columns = (
         {column["name"] for column in inspector.get_columns("post_images")}
         if "post_images" in inspector.get_table_names()

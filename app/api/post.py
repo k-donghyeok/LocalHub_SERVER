@@ -14,7 +14,15 @@ router = APIRouter(prefix="/posts", tags=["posts"])
 
 
 def _detail(post) -> PostDetailResponse:
-    return PostDetailResponse(id=post.id, title=post.title, content=post.content, nickname=post.nickname, place_id=post.place_id, images=[PostImageItem(image_id=image.id) for image in post.images])
+    return PostDetailResponse(
+        id=post.id,
+        title=post.title,
+        content=post.content,
+        nickname=post.nickname,
+        place_id=post.place_id,
+        rating=post.rating,
+        images=[PostImageItem(image_id=image.id) for image in post.images],
+    )
 
 
 @router.post("", response_model=PostCreateResponse, status_code=201)
@@ -24,6 +32,7 @@ async def create(
     password: str = Form(...),
     title: str = Form(...),
     content: str = Form(...),
+    rating: int = Form(..., ge=1, le=5),
     images: List[UploadFile] = File(default=[]),
     db: Session = Depends(get_db)
 ):
@@ -34,7 +43,8 @@ async def create(
         password,
         title,
         content,
-        images
+        images,
+        rating=rating,
     )
     return PostCreateResponse(
         id=post.id,
@@ -45,7 +55,7 @@ async def create(
 @router.get("", response_model=PostListResponse)
 def list_all(place_id: int | None = Query(default=None), db: Session = Depends(get_db)):
     posts = list_posts(db, place_id)
-    return PostListResponse(total=len(posts), items=[PostListItem(id=post.id, title=post.title, nickname=post.nickname, place_id=post.place_id, image_count=len(post.images), created_at=post.created_at) for post in posts])
+    return PostListResponse(total=len(posts), items=[PostListItem(id=post.id, title=post.title, nickname=post.nickname, place_id=post.place_id, rating=post.rating, image_count=len(post.images), created_at=post.created_at) for post in posts])
 
 
 @router.get("/images/{image_id}")
@@ -60,8 +70,8 @@ def read(post_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{post_id}", response_model=PostDetailResponse)
-async def update(post_id: int, password: str = Form(...), title: str = Form(...), content: str = Form(...), images: List[UploadFile] = File(default=[]), db: Session = Depends(get_db)):
-    return _detail(await update_post(db, post_id, password, title, content, images))
+async def update(post_id: int, password: str = Form(...), title: str = Form(...), content: str = Form(...), rating: int | None = Form(default=None, ge=1, le=5), images: List[UploadFile] = File(default=[]), db: Session = Depends(get_db)):
+    return _detail(await update_post(db, post_id, password, title, content, images, rating=rating))
 
 
 @router.delete("/{post_id}", status_code=204)

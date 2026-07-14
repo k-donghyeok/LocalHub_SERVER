@@ -41,12 +41,18 @@ def _validate_text(nickname: str, password: str, title: str, content: str) -> No
         raise HTTPException(status_code=400, detail="nickname, password, title, content는 필수입니다.")
 
 
-async def create_post(db: Session, place_id: int, nickname: str, password: str, title: str, content: str, images: list[UploadFile] | None) -> Post:
+def _validate_rating(rating: int) -> None:
+    if not 1 <= rating <= 5:
+        raise HTTPException(status_code=400, detail="rating은 1~5 사이의 값이어야 합니다.")
+
+
+async def create_post(db: Session, place_id: int, nickname: str, password: str, title: str, content: str, images: list[UploadFile] | None, rating: int = 5) -> Post:
     _validate_text(nickname, password, title, content)
+    _validate_rating(rating)
     repository = PostRepository(db)
     if repository.get_place(place_id) is None:
         raise _not_found("존재하지 않는 장소입니다.")
-    post = Post(place_id=place_id, nickname=nickname.strip(), password=password, title=title.strip(), content=content.strip(), images=await _build_images(images))
+    post = Post(place_id=place_id, nickname=nickname.strip(), password=password, title=title.strip(), content=content.strip(), rating=rating, images=await _build_images(images))
     return repository.save(post)
 
 
@@ -71,12 +77,15 @@ def get_post_image(db: Session, image_id: int) -> PostImage:
     return image
 
 
-async def update_post(db: Session, post_id: int, password: str, title: str, content: str, images: list[UploadFile] | None) -> Post:
+async def update_post(db: Session, post_id: int, password: str, title: str, content: str, images: list[UploadFile] | None, rating: int | None = None) -> Post:
     post = get_post(db, post_id)
     if post.password != password:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="비밀번호가 일치하지 않습니다.")
     if not title.strip() or not content.strip():
         raise HTTPException(status_code=400, detail="title과 content는 필수입니다.")
+    if rating is not None:
+        _validate_rating(rating)
+        post.rating = rating
     post.title = title.strip()
     post.content = content.strip()
     if images:

@@ -15,6 +15,7 @@ class Post(Base):
     password = Column(String(255), nullable=False)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
+    rating = Column(Integer, nullable=False, default=5)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
