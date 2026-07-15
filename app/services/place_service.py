@@ -76,6 +76,8 @@ def list_places_by_category(db: Session, content_type_id: int, page: int = 1, pa
             "first_image": normalize_place_image_url(place.first_image),
             "contentTypeId": place.content_type_id,
             "category": place.content_type,
+            "avg_rating": float(place.avg_rating or 0.0),
+            "post_cnt": int(place.post_cnt or 0),
         }
         for place in places
     ]
