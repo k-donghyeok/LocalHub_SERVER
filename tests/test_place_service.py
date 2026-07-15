@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.db.database import Base
 from app.models.place import Place
-from app.services.place_service import list_places_by_category, search_places
+from app.services.place_service import list_places_by_category, normalize_place_image_url, search_places
 
 
 def make_place(index: int, title: str) -> Place:
@@ -44,7 +44,7 @@ def test_list_places_by_category_includes_first_image():
     Base.metadata.create_all(engine)
     session = sessionmaker(bind=engine)()
     place = make_place(1, "Image Place")
-    place.first_image = "https://example.com/place.jpg"
+    place.first_image = "http://tong.visitkorea.or.kr/cms/place.jpg"
     session.add(place)
     session.commit()
 
@@ -56,7 +56,13 @@ def test_list_places_by_category_includes_first_image():
         "content_id": "content-1",
         "title": "Image Place",
         "address": "Busan",
-        "first_image": "https://example.com/place.jpg",
+        "first_image": "https://tong.visitkorea.or.kr/cms/place.jpg",
         "contentTypeId": 12,
         "category": "place",
     }]
+
+
+def test_normalize_place_image_url_preserves_other_urls_and_empty_values():
+    assert normalize_place_image_url("https://tong.visitkorea.or.kr/cms/place.jpg") == "https://tong.visitkorea.or.kr/cms/place.jpg"
+    assert normalize_place_image_url("http://example.com/place.jpg") == "http://example.com/place.jpg"
+    assert normalize_place_image_url(None) is None
