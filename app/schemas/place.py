@@ -16,6 +16,8 @@ class PlaceCategoryItem(BaseModel):
     first_image: str | None = None
     contentTypeId: int
     category: str
+    avg_rating: float = 0.0
+    post_cnt: int = 0
 
 
 class PlaceCategoryListResponse(BaseModel):

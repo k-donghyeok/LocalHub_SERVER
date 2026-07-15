@@ -39,12 +39,14 @@ def test_search_places_prioritizes_all_exact_title_matches_before_partial_matche
     assert all(set(result) == {"id", "content_id", "title", "address"} for result in results)
 
 
-def test_list_places_by_category_includes_first_image():
+def test_list_places_by_category_includes_first_image_and_review_stats():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     session = sessionmaker(bind=engine)()
     place = make_place(1, "Image Place")
     place.first_image = "http://tong.visitkorea.or.kr/cms/place.jpg"
+    place.avg_rating = 4.25
+    place.post_cnt = 3
     session.add(place)
     session.commit()
 
@@ -59,7 +61,27 @@ def test_list_places_by_category_includes_first_image():
         "first_image": "https://tong.visitkorea.or.kr/cms/place.jpg",
         "contentTypeId": 12,
         "category": "place",
+        "avg_rating": 4.25,
+        "post_cnt": 3,
     }]
+
+
+def test_list_places_by_category_uses_safe_default_review_stats():
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    session = sessionmaker(bind=engine)()
+    place = make_place(1, "No Reviews")
+    place.avg_rating = None
+    place.post_cnt = None
+    session.add(place)
+    session.commit()
+
+    result = list_places_by_category(session, 12)
+
+    assert result["items"][0]["avg_rating"] == 0.0
+    assert result["items"][0]["post_cnt"] == 0
+    assert result["page"] == 1
+    assert result["page_size"] == 4
 
 
 def test_normalize_place_image_url_preserves_other_urls_and_empty_values():
